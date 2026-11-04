@@ -1,0 +1,7 @@
+```Same baseline on Palo Alto URL logs (Splunk Add-on for Palo Alto Networks). URL logs are THREAT logs with log_subtype=url; eventtype pan_url selects them.```
+eventtype=pan_url earliest=-14d
+| eval dest_host=coalesce(dest_name, url_domain, dest)
+| stats count AS events dc(user) AS users
+        sum(eval(if(action IN ("blocked","block-url","deny"),1,0))) AS denies
+        values(category) AS category values(rule) AS rules BY dest_host
+| sort - events

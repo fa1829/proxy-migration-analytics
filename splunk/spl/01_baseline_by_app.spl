@@ -1,0 +1,13 @@
+```Traffic baseline per application: who uses it, how much, what verdicts. First query on any migration.```
+index=proxy sourcetype=proxy:csv earliest=-14d
+| lookup app_inventory domain AS dest OUTPUT app owner business_unit AS app_bu migration_wave
+| eval app=coalesce(app, "UNMAPPED:".replace(dest, "^.*?([^.]+\.[^.]+)$", "\1"))
+| stats count AS events dc(user) AS users dc(src) AS hosts
+        sum(eval(if(action="blocked" AND ssl_result!="handshake_failed",1,0))) AS policy_denies
+        sum(eval(if(ssl_result="handshake_failed",1,0))) AS tls_failures
+        sum(eval(if(ssl_result IN ("bypassed","not_inspected"),1,0))) AS uninspected
+        values(dest_port) AS ports first(owner) AS owner first(migration_wave) AS wave
+        BY app
+| eval deny_pct=round(100*policy_denies/events,1), tls_fail_pct=round(100*tls_failures/events,1),
+       uninspected_pct=round(100*uninspected/events,1)
+| sort - events

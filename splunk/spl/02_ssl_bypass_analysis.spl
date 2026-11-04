@@ -1,0 +1,11 @@
+```Why is traffic not being inspected? Splits handshake failures (likely pinning/mTLS) from policy bypasses.```
+index=proxy sourcetype=ssl_bypass:csv earliest=-14d
+| lookup app_inventory domain AS dest OUTPUT app owner
+| lookup bypass_exceptions domain AS dest OUTPUT reason AS exc_reason expires ticket
+| eval exc_state=case(isnull(expires), "NO_EXCEPTION",
+                      strptime(expires,"%Y-%m-%d") < now(), "EXPIRED",
+                      true(), "VALID")
+| stats count AS sessions dc(user) AS users values(tls_version) AS tls
+        values(bypass_reason) AS reasons
+        BY app dest ssl_result exc_state
+| sort - sessions

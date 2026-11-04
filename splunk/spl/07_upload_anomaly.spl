@@ -1,0 +1,11 @@
+```Unusual upload volume per user per app using median/MAD (robust to the outlier itself). Floor of 500 KB removes noise.```
+index=proxy sourcetype=proxy:csv earliest=-14d
+| lookup app_inventory domain AS dest OUTPUT app
+| eval app=coalesce(app, "UNMAPPED:".dest)
+| stats sum(bytes_out) AS bytes_out BY app user
+| eventstats median(bytes_out) AS med BY app
+| eval absdev=abs(bytes_out-med)
+| eventstats median(absdev) AS mad BY app
+| eval robust_z=round(0.6745*(bytes_out-med)/if(mad=0,1,mad),1)
+| where robust_z>3 AND bytes_out>500000
+| sort - robust_z

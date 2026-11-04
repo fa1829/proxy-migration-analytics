@@ -1,0 +1,9 @@
+```Apps that fail TLS interception repeatedly from many users = Do-Not-Decrypt candidates. One user failing = endpoint problem, not pinning.```
+index=proxy sourcetype=proxy:csv ssl_result="handshake_failed" earliest=-14d
+| lookup app_inventory domain AS dest OUTPUT app owner
+| stats count AS failures dc(user) AS users dc(src) AS hosts values(http_user_agent) AS agents BY app dest
+| join type=left dest
+    [ search index=proxy sourcetype=proxy:csv earliest=-14d | stats count AS total BY dest ]
+| eval fail_pct=round(100*failures/total,1)
+| where users>=5 AND fail_pct>=2
+| sort - fail_pct

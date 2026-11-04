@@ -1,0 +1,7 @@
+```Denies grouped by rule and app: intended controls vs policy gaps to fix before migration. Do not copy a broken legacy rule into Netskope.```
+index=proxy sourcetype=proxy:csv action="blocked" ssl_result!="handshake_failed" earliest=-14d
+| lookup app_inventory domain AS dest OUTPUT app owner business_unit AS app_bu
+| lookup users user OUTPUT business_unit AS user_bu
+| stats count AS denies dc(user) AS users values(user_bu) AS user_bus values(category) AS category BY rule app dest
+| eventstats sum(denies) AS rule_total BY rule
+| sort - denies

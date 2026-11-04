@@ -1,0 +1,6 @@
+```Time analysis: watch denies and TLS failures per hour for the apps in the current wave - the go/no-go panel during cut-over.```
+index=proxy sourcetype=proxy:csv earliest=-7d
+| lookup app_inventory domain AS dest OUTPUT app migration_wave
+| search migration_wave=1
+| eval outcome=case(ssl_result="handshake_failed","tls_failure", action="blocked","policy_deny", status>=500,"upstream_error", true(),"ok")
+| timechart span=1h count BY outcome

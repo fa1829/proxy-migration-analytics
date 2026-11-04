@@ -1,0 +1,21 @@
+app,domain,owner,business_unit,migration_wave
+Office 365,outlook.office365.com,it.collab,Corporate IT,1
+Office 365,login.microsoftonline.com,it.collab,Corporate IT,1
+Office 365,graph.microsoft.com,it.collab,Corporate IT,1
+Salesforce,acme.my.salesforce.com,crm.team,Retail Banking,1
+Salesforce,login.salesforce.com,crm.team,Retail Banking,1
+ServiceNow,acme.service-now.com,itsm.team,Corporate IT,1
+Bloomberg Terminal,bpipe.bloomberg.net,mkt.data,Capital Markets,2
+Bloomberg Terminal,bba.bloomberg.net,mkt.data,Capital Markets,2
+Zoom,zoom.us,it.collab,Corporate IT,1
+Zoom,us04web.zoom.us,it.collab,Corporate IT,1
+SWIFT Alliance,swiftnet.swift.com,payments.ops,Payments,3
+Refinitiv Eikon,api.refinitiv.com,mkt.data,Capital Markets,2
+Refinitiv Eikon,eikon.refinitiv.com,mkt.data,Capital Markets,2
+GitHub,github.com,devtools,Technology,2
+GitHub,api.github.com,devtools,Technology,2
+GitHub,objects.githubusercontent.com,devtools,Technology,2
+Docker Hub,registry-1.docker.io,devtools,Technology,2
+Docker Hub,auth.docker.io,devtools,Technology,2
+Vendor FX Feed,fx.vendorfeed.example,fx.desk,Capital Markets,3
+Workday,wd5.myworkday.com,hr.systems,Human Resources,1

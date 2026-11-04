@@ -1,0 +1,8 @@
+```Run first. If a proxy node stopped forwarding, every number above is wrong.```
+index=proxy sourcetype=proxy:csv earliest=-7d
+| eval missing_user=if(isnull(user) OR user="" OR user="-",1,0)
+| bin _time span=1h
+| stats count AS events sum(missing_user) AS missing_user BY _time proxy_node
+| eventstats avg(events) AS avg_events stdev(events) AS sd BY proxy_node
+| eval gap=if(events < avg_events - 3*sd, "VOLUME DROP", null())
+| where isnotnull(gap) OR missing_user>0

@@ -1,0 +1,6 @@
+```Traffic bypassing inspection with no approved exception on file = control gap to escalate.```
+index=proxy sourcetype=ssl_bypass:csv ssl_result="bypassed" earliest=-14d
+| lookup bypass_exceptions domain AS dest OUTPUT ticket
+| where isnull(ticket)
+| stats count AS sessions dc(user) AS users values(rule) AS legacy_rule BY dest
+| sort - sessions

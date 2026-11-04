@@ -1,0 +1,14 @@
+```Audit the exception list before migrating it: expired-but-used, unused, no ticket, and bypasses with no exception at all.```
+| inputlookup bypass_exceptions
+| eval expired=if(strptime(expires,"%Y-%m-%d") < now(), 1, 0)
+| join type=left domain
+    [ search index=proxy sourcetype=ssl_bypass:csv earliest=-30d
+      | stats count AS hits_30d latest(_time) AS last_seen BY dest | rename dest AS domain ]
+| fillnull value=0 hits_30d
+| eval finding=case(expired=1 AND hits_30d>0, "HIGH: expired but still used",
+                    expired=1, "LOW: expired, unused - delete",
+                    ticket="" OR isnull(ticket), "MEDIUM: no change ticket (no audit trail)",
+                    hits_30d=0, "LOW: active but unused - do not migrate",
+                    true(), "OK")
+| table domain reason approver ticket expires hits_30d last_seen finding
+| sort finding

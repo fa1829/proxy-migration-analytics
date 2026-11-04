@@ -1,0 +1,10 @@
+```Before vs after cut-over for one app: same users, same destinations - did error rates move? Legacy proxy logs vs Netskope transaction logs.```
+(index=proxy sourcetype=proxy:csv) OR (index=netskope sourcetype="netskope:web_transaction*")
+| eval platform=if(index="netskope","netskope","legacy")
+| eval host_=coalesce(dest, 'cs-host'), user_=coalesce(user, 'cs-username'),
+       code=coalesce(status, 'sc-status')
+| lookup app_inventory domain AS host_ OUTPUT app
+| search app="Salesforce"
+| stats count AS requests dc(user_) AS users
+        sum(eval(if(code>=400 OR code=0,1,0))) AS errors BY platform
+| eval error_pct=round(100*errors/requests,2)

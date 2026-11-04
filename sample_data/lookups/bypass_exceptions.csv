@@ -1,0 +1,7 @@
+domain,reason,approver,ticket,expires
+bpipe.bloomberg.net,certificate_pinning,ciso.delegate,CHG0012001,2027-03-31
+bba.bloomberg.net,certificate_pinning,ciso.delegate,CHG0012001,2027-03-31
+swiftnet.swift.com,mutual_tls,ciso.delegate,CHG0010555,2026-12-31
+zoom.us,certificate_pinning,it.collab.mgr,CHG0009870,2026-09-30
+fx.vendorfeed.example,non_standard_port,fx.desk.head,,2026-06-30
+old-hr-portal.example,legacy_app,hr.systems,CHG0007001,2025-12-31

@@ -1,0 +1,5 @@
+```After migration: Netskope transaction events. Field names follow the transaction-event formats (x-ssl-bypass, x-ssl-bypass-reason). Verify against your tenant's Log Streaming field selection - field order and set are configurable.```
+index=netskope sourcetype="netskope:web_transaction*" earliest=-24h
+| search 'x-ssl-bypass'="Yes"
+| stats count AS sessions dc('cs-username') AS users BY 'x-ssl-bypass-reason' 'cs-host'
+| sort - sessions

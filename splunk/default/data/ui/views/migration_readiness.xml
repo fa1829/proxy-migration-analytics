@@ -1,0 +1,100 @@
+<form version="1.1" theme="light">
+  <label>Proxy to Netskope migration readiness</label>
+  <description>Synthetic data. Run data-quality panel first; numbers below it are only as good as the feed.</description>
+  <fieldset submitButton="false"><input type="time" token="time"><label>Window</label>
+    <default><earliest>-30d@d</earliest><latest>now</latest></default></input></fieldset>
+  <row><panel><title>Data quality: volume drops / missing user</title><table>
+      <search><query>index=proxy sourcetype=proxy:csv 
+| eval missing_user=if(isnull(user) OR user="" OR user="-",1,0)
+| bin _time span=1h
+| stats count AS events sum(missing_user) AS missing_user BY _time proxy_node
+| eventstats avg(events) AS avg_events stdev(events) AS sd BY proxy_node
+| eval gap=if(events &lt; avg_events - 3*sd, "VOLUME DROP", null())
+| where isnotnull(gap) OR missing_user&gt;0</query><earliest>$time.earliest$</earliest><latest>$time.latest$</latest></search>
+      <option name="drilldown">cell</option><option name="count">15</option></table></panel></row>
+  <row><panel><title>Application baseline</title><table>
+      <search><query>index=proxy sourcetype=proxy:csv 
+| lookup app_inventory domain AS dest OUTPUT app owner business_unit AS app_bu migration_wave
+| eval app=coalesce(app, "UNMAPPED:".replace(dest, "^.*?([^.]+\.[^.]+)$", "\1"))
+| stats count AS events dc(user) AS users dc(src) AS hosts
+        sum(eval(if(action="blocked" AND ssl_result!="handshake_failed",1,0))) AS policy_denies
+        sum(eval(if(ssl_result="handshake_failed",1,0))) AS tls_failures
+        sum(eval(if(ssl_result IN ("bypassed","not_inspected"),1,0))) AS uninspected
+        values(dest_port) AS ports first(owner) AS owner first(migration_wave) AS wave
+        BY app
+| eval deny_pct=round(100*policy_denies/events,1), tls_fail_pct=round(100*tls_failures/events,1),
+       uninspected_pct=round(100*uninspected/events,1)
+| sort - events</query><earliest>$time.earliest$</earliest><latest>$time.latest$</latest></search>
+      <option name="drilldown">cell</option><option name="count">15</option></table></panel></row>
+  <row><panel><title>Wave 1 outcomes per hour</title><chart>
+      <search><query>index=proxy sourcetype=proxy:csv 
+| lookup app_inventory domain AS dest OUTPUT app migration_wave
+| search migration_wave=1
+| eval outcome=case(ssl_result="handshake_failed","tls_failure", action="blocked","policy_deny", status&gt;=500,"upstream_error", true(),"ok")
+| timechart span=1h count BY outcome</query><earliest>$time.earliest$</earliest><latest>$time.latest$</latest></search>
+      <option name="charting.chart">column</option><option name="charting.chart.stackMode">stacked</option></chart></panel></row>
+  <row><panel><title>SSL bypass by app and exception state</title><table>
+      <search><query>index=proxy sourcetype=ssl_bypass:csv 
+| lookup app_inventory domain AS dest OUTPUT app owner
+| lookup bypass_exceptions domain AS dest OUTPUT reason AS exc_reason expires ticket
+| eval exc_state=case(isnull(expires), "NO_EXCEPTION",
+                      strptime(expires,"%Y-%m-%d") &lt; now(), "EXPIRED",
+                      true(), "VALID")
+| stats count AS sessions dc(user) AS users values(tls_version) AS tls
+        values(bypass_reason) AS reasons
+        BY app dest ssl_result exc_state
+| sort - sessions</query><earliest>$time.earliest$</earliest><latest>$time.latest$</latest></search>
+      <option name="drilldown">cell</option><option name="count">15</option></table></panel></row>
+  <row><panel><title>Certificate-pinning candidates</title><table>
+      <search><query>index=proxy sourcetype=proxy:csv ssl_result="handshake_failed" 
+| lookup app_inventory domain AS dest OUTPUT app owner
+| stats count AS failures dc(user) AS users dc(src) AS hosts values(http_user_agent) AS agents BY app dest
+| join type=left dest
+    [ search index=proxy sourcetype=proxy:csv  | stats count AS total BY dest ]
+| eval fail_pct=round(100*failures/total,1)
+| where users&gt;=5 AND fail_pct&gt;=2
+| sort - fail_pct</query><earliest>$time.earliest$</earliest><latest>$time.latest$</latest></search>
+      <option name="drilldown">cell</option><option name="count">15</option></table></panel></row>
+  <row><panel><title>Policy denies to review</title><table>
+      <search><query>index=proxy sourcetype=proxy:csv action="blocked" ssl_result!="handshake_failed" 
+| lookup app_inventory domain AS dest OUTPUT app owner business_unit AS app_bu
+| lookup users user OUTPUT business_unit AS user_bu
+| stats count AS denies dc(user) AS users values(user_bu) AS user_bus values(category) AS category BY rule app dest
+| eventstats sum(denies) AS rule_total BY rule
+| sort - denies</query><earliest>$time.earliest$</earliest><latest>$time.latest$</latest></search>
+      <option name="drilldown">cell</option><option name="count">15</option></table></panel></row>
+  <row><panel><title>Exception hygiene</title><table>
+      <search><query>| inputlookup bypass_exceptions
+| eval expired=if(strptime(expires,"%Y-%m-%d") &lt; now(), 1, 0)
+| join type=left domain
+    [ search index=proxy sourcetype=ssl_bypass:csv 
+      | stats count AS hits_30d latest(_time) AS last_seen BY dest | rename dest AS domain ]
+| fillnull value=0 hits_30d
+| eval finding=case(expired=1 AND hits_30d&gt;0, "HIGH: expired but still used",
+                    expired=1, "LOW: expired, unused - delete",
+                    ticket="" OR isnull(ticket), "MEDIUM: no change ticket (no audit trail)",
+                    hits_30d=0, "LOW: active but unused - do not migrate",
+                    true(), "OK")
+| table domain reason approver ticket expires hits_30d last_seen finding
+| sort finding</query><earliest>$time.earliest$</earliest><latest>$time.latest$</latest></search>
+      <option name="drilldown">cell</option><option name="count">15</option></table></panel></row>
+  <row><panel><title>Bypass with no approved exception</title><table>
+      <search><query>index=proxy sourcetype=ssl_bypass:csv ssl_result="bypassed" 
+| lookup bypass_exceptions domain AS dest OUTPUT ticket
+| where isnull(ticket)
+| stats count AS sessions dc(user) AS users values(rule) AS legacy_rule BY dest
+| sort - sessions</query><earliest>$time.earliest$</earliest><latest>$time.latest$</latest></search>
+      <option name="drilldown">cell</option><option name="count">15</option></table></panel></row>
+  <row><panel><title>Upload anomalies (median/MAD)</title><table>
+      <search><query>index=proxy sourcetype=proxy:csv 
+| lookup app_inventory domain AS dest OUTPUT app
+| eval app=coalesce(app, "UNMAPPED:".dest)
+| stats sum(bytes_out) AS bytes_out BY app user
+| eventstats median(bytes_out) AS med BY app
+| eval absdev=abs(bytes_out-med)
+| eventstats median(absdev) AS mad BY app
+| eval robust_z=round(0.6745*(bytes_out-med)/if(mad=0,1,mad),1)
+| where robust_z&gt;3 AND bytes_out&gt;500000
+| sort - robust_z</query><earliest>$time.earliest$</earliest><latest>$time.latest$</latest></search>
+      <option name="drilldown">cell</option><option name="count">15</option></table></panel></row>
+</form>

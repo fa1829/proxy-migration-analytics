@@ -1,0 +1,15 @@
+# Local Splunk to run the SPL library against the synthetic data.
+# Splunk's free/trial licence terms apply; this image is for lab use only.
+services:
+  splunk:
+    image: splunk/splunk:latest
+    container_name: proxy-migration-splunk
+    environment:
+      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_GENERAL_TERMS: --accept-sgt-current-at-splunk-com
+      SPLUNK_PASSWORD: ${SPLUNK_PASSWORD:?set SPLUNK_PASSWORD in your shell}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./splunk:/opt/splunk/etc/apps/proxy_migration_analytics
+      - ./sample_data:/data:ro
