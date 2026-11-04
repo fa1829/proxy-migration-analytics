@@ -1,4 +1,4 @@
-_time,src,user,dest,dest_port,sni,tls_version,ssl_result,bypass_reason,rule,proxy_node
+event_time,src,user,dest,dest_port,sni,tls_version,ssl_result,bypass_reason,rule,proxy_node
 2026-10-01T00:00:22,10.12.13.128,u0231,zoom.us,443,zoom.us,TLSv1.2,handshake_failed,certificate_pinning,ssl-inspect-default,tor-swg-01
 2026-10-01T00:46:01,10.12.30.136,u0223,fx.vendorfeed.example,8443,fx.vendorfeed.example,TLSv1.2,not_inspected,non_standard_port,allow-fx-vendor-port,tor-swg-01
 2026-10-01T01:06:19,10.15.29.104,u0071,bba.bloomberg.net,443,bba.bloomberg.net,TLSv1.3,handshake_failed,client_alert_bad_certificate,ssl-inspect-default,tor-swg-01

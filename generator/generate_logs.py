@@ -150,7 +150,7 @@ def generate(out: Path, days: int, events_per_day: int, seed: int) -> dict:
                 ua = "ZoomClient/6.2"
 
             row = {
-                "_time": ts.isoformat(timespec="seconds"),
+                "event_time": ts.isoformat(timespec="seconds"),
                 "src": u["src"], "user": u["user"],
                 "dest": host, "dest_port": port,
                 "url": f"https://{host}{'' if port == 443 else ':' + str(port)}/{rng.choice(['', 'api/v1/', 'login', 'data/stream'])}",
@@ -170,15 +170,15 @@ def generate(out: Path, days: int, events_per_day: int, seed: int) -> dict:
                     "not_inspected": "non_standard_port",
                 }[ssl_result]
                 bypass_rows.append({
-                    "_time": row["_time"], "src": row["src"], "user": row["user"],
+                    "event_time": row["event_time"], "src": row["src"], "user": row["user"],
                     "dest": host, "dest_port": port,
                     "sni": host, "tls_version": rng.choice(["TLSv1.2", "TLSv1.3", "TLSv1.3"]),
                     "ssl_result": ssl_result, "bypass_reason": reason,
                     "rule": rule, "proxy_node": row["proxy_node"],
                 })
 
-    proxy_rows.sort(key=lambda r: r["_time"])
-    bypass_rows.sort(key=lambda r: r["_time"])
+    proxy_rows.sort(key=lambda r: r["event_time"])
+    bypass_rows.sort(key=lambda r: r["event_time"])
 
     write_csv(out / "proxy_events.csv", proxy_rows, list(proxy_rows[0].keys()))
     write_csv(out / "ssl_bypass_events.csv", bypass_rows, list(bypass_rows[0].keys()))

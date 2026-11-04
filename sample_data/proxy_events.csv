@@ -1,4 +1,4 @@
-_time,src,user,dest,dest_port,url,http_method,status,action,category,rule,ssl_result,bytes_in,bytes_out,http_user_agent,proxy_node
+event_time,src,user,dest,dest_port,url,http_method,status,action,category,rule,ssl_result,bytes_in,bytes_out,http_user_agent,proxy_node
 2026-10-01T00:00:22,10.12.13.128,u0231,zoom.us,443,https://zoom.us/,GET,0,blocked,Internet Communications,ssl-inspect-default,handshake_failed,8869,5345,ZoomClient/6.2,tor-swg-01
 2026-10-01T00:03:34,10.15.25.209,u0360,acme.my.salesforce.com,443,https://acme.my.salesforce.com/api/v1/,GET,200,allowed,Business and Economy,allow-business-saas,decrypted,8909,268,Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) Safari/605.1.15,mtl-swg-02
 2026-10-01T00:03:56,10.14.23.249,u0342,login.microsoftonline.com,443,https://login.microsoftonline.com/login,GET,200,allowed,Business and Economy,allow-business-saas,decrypted,42644,326,python-requests/2.32.3,mtl-swg-01

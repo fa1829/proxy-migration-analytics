@@ -84,7 +84,7 @@ def test_policy_plan_skips_unowned_apps(result):
 
 
 def test_uneven_node_volume_detected():
-    df = pd.DataFrame({"_time": pd.date_range("2026-10-01", periods=110, freq="h"),
+    df = pd.DataFrame({"event_time": pd.date_range("2026-10-01", periods=110, freq="h"),
                        "src": "10.0.0.1", "user": "u1", "dest": "x.com", "action": "allowed", "status": 200,
                        "proxy_node": ["a"] * 100 + ["b"] * 10})
     f = analyze.data_quality(df)

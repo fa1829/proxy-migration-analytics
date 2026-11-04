@@ -35,8 +35,8 @@ UPLOAD_MIN_BYTES = 500_000       # ignore statistically odd but tiny uploads (no
 
 def load(data_dir: Path) -> dict[str, pd.DataFrame]:
     d = {
-        "proxy": pd.read_csv(data_dir / "proxy_events.csv", parse_dates=["_time"]),
-        "bypass": pd.read_csv(data_dir / "ssl_bypass_events.csv", parse_dates=["_time"]),
+        "proxy": pd.read_csv(data_dir / "proxy_events.csv", parse_dates=["event_time"]),
+        "bypass": pd.read_csv(data_dir / "ssl_bypass_events.csv", parse_dates=["event_time"]),
         "inventory": pd.read_csv(data_dir / "lookups" / "app_inventory.csv"),
         "exceptions": pd.read_csv(data_dir / "lookups" / "bypass_exceptions.csv",
                                   parse_dates=["expires"], keep_default_na=False),
@@ -61,7 +61,7 @@ def enrich(proxy: pd.DataFrame, inventory: pd.DataFrame, users: pd.DataFrame) ->
 def data_quality(proxy: pd.DataFrame) -> list[dict]:
     """Checks you run BEFORE trusting any migration numbers."""
     findings = []
-    required = ["_time", "src", "user", "dest", "action", "status"]
+    required = ["event_time", "src", "user", "dest", "action", "status"]
     for col in required:
         missing = proxy[col].isna().mean()
         if missing > 0:
@@ -248,7 +248,7 @@ def run(data_dir: Path, out_dir: Path, today: pd.Timestamp | None = None) -> dic
     anomalies.to_csv(out_dir / "anomalies.csv", index=False)
     (out_dir / "netskope_policy_plan.yaml").write_text(policy_plan(ready))
     summary = {"events": len(d["proxy"]), "bypass": len(d["bypass"]),
-               "start": d["proxy"]["_time"].min().date(), "end": d["proxy"]["_time"].max().date()}
+               "start": d["proxy"]["event_time"].min().date(), "end": d["proxy"]["event_time"].max().date()}
     (out_dir / "report.html").write_text(html_report(ready, gaps, anomalies, summary))
     return {"ready": ready, "gaps": gaps, "anomalies": anomalies}
 
